@@ -61,3 +61,17 @@
     2.start election
     3.grant other peer a vote
 election resetrction只针对于election，不需要针对requestEntries
+
+## 2B
+区分lastApplied和commitIndex
+- commitIndex表示log被多数节点共识，但该log可能还未被执行
+- lastApplied表示共识后的logEntry，其中哪些已经被执行了，所以commitIndex≥lastApplied
+1. sendRpc to followers
+2. 根据相应信息，更新nextIndex，appendEntries
+3. leader确认commitLogIndex，可以放在heartBeats时每次检查
+    - N > commitIndex
+    - N = majority of maxchIndex[]
+    - log[N].term = currentTerm确认自己在任期内
+    - set commitIndex = N
+- 注意prevLogIndex是即将发送的entries的前一个index，和requestVote里面的lastLogIndex不是一个index
+- 选择新leader时的term，和对比log的lastLogTerm不是一个，所以即使新leader的term较高，但是其lastLogTerm低也不会被选上

@@ -147,6 +147,7 @@ func TestBasicAgree2B(t *testing.T) {
 		}
 
 		xindex := cfg.one(index*100, servers, false)
+		DPrintf("index %v, xindex %v", index, xindex)
 		if xindex != index {
 			t.Fatalf("got index %v but expected %v", xindex, index)
 		}
@@ -431,6 +432,7 @@ func TestBackup2B(t *testing.T) {
 	for i := 0; i < 50; i++ {
 		cfg.rafts[leader1].Start(rand.Int())
 	}
+	DPrintf("submit lots of commands that won't commit-------")
 
 	time.Sleep(RaftElectionTimeout / 2)
 
@@ -442,10 +444,13 @@ func TestBackup2B(t *testing.T) {
 	cfg.connect((leader1 + 3) % servers)
 	cfg.connect((leader1 + 4) % servers)
 
+	DPrintf("new leader selected:%v-------", cfg.checkOneLeader())
+
 	// lots of successful commands to new group.
 	for i := 0; i < 50; i++ {
 		cfg.one(rand.Int(), 3, true)
 	}
+	DPrintf("lots of successful commands to new group-------")
 
 	// now another partitioned leader and one follower
 	leader2 := cfg.checkOneLeader()
@@ -459,6 +464,7 @@ func TestBackup2B(t *testing.T) {
 	for i := 0; i < 50; i++ {
 		cfg.rafts[leader2].Start(rand.Int())
 	}
+	DPrintf("another partitioned leader, lots more commands that won't commit------")
 
 	time.Sleep(RaftElectionTimeout / 2)
 
@@ -470,16 +476,21 @@ func TestBackup2B(t *testing.T) {
 	cfg.connect((leader1 + 1) % servers)
 	cfg.connect(other)
 
+	DPrintf("second round new leader selected:%v-------", cfg.checkOneLeader())
 	// lots of successful commands to new group.
 	for i := 0; i < 50; i++ {
 		cfg.one(rand.Int(), 3, true)
 	}
+	DPrintf("another partitioned leader, lots of successful commands to new group------")
 
 	// now everyone
 	for i := 0; i < servers; i++ {
 		cfg.connect(i)
 	}
-	cfg.one(rand.Int(), servers, true)
+	lastCmd := rand.Int()
+	DPrintf("everyone connected, lastCmd: %v-------", lastCmd)
+	cfg.one(lastCmd, servers, true)
+	DPrintf("finalized------")
 
 	cfg.end()
 }
