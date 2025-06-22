@@ -815,6 +815,7 @@ func TestUnreliableAgree2C(t *testing.T) {
 
 	wg.Wait()
 
+	fmt.Println("waiting for all commands to be committed")
 	cfg.one(100, servers, true)
 
 	cfg.end()
@@ -828,6 +829,7 @@ func TestFigure8Unreliable2C(t *testing.T) {
 	cfg.begin("Test (2C): Figure 8 (unreliable)")
 
 	cfg.one(rand.Int()%10000, 1, true)
+	fmt.Println("initial complete agreement done--------------------------------")
 
 	nup := servers
 	for iters := 0; iters < 1000; iters++ {
@@ -870,6 +872,7 @@ func TestFigure8Unreliable2C(t *testing.T) {
 		}
 	}
 
+	fmt.Println("second complete agreement start--------------------------------")
 	cfg.one(rand.Int()%10000, servers, true)
 
 	cfg.end()

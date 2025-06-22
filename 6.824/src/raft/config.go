@@ -140,7 +140,6 @@ func (cfg *config) crash1(i int) {
 func (cfg *config) checkLogs(i int, m ApplyMsg) (string, bool) {
 	err_msg := ""
 	v := m.Command
-	fmt.Println("server:", i, "checklogs:", m)
 	for j := 0; j < len(cfg.logs); j++ {
 		if old, oldok := cfg.logs[j][m.CommandIndex]; oldok && old != v {
 			log.Printf("commit:%v: server:%v checklog:%v; server:%v oldlog:%v\n", i, i, cfg.logs[i], j, cfg.logs[j])
@@ -539,8 +538,9 @@ func (cfg *config) one(cmd interface{}, expectedServers int, retry bool) int {
 				time.Sleep(20 * time.Millisecond)
 			}
 			if retry == false {
-				cfg.t.Fatalf("one(%v) failed to reach agreement", cmd)
+				cfg.t.Fatalf("one(%v) failed to reach agreement retry", cmd)
 			}
+			fmt.Println("failed to reach agreement, retry cmd, index:", cmd, index)
 		} else {
 			time.Sleep(50 * time.Millisecond)
 		}
