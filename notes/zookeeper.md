@@ -1,0 +1,15 @@
+# zookeeper
+- 允许reads在replica上，因此大幅提升了性能，但是不保证读写的全局linearizability，所以可能读到stale data
+- Linearizability write
+- 单个client读写都是FIFO，即使read换了一个replica也是可以的
+    - 通过加一个ZID字段来提醒server
+- API设计的非常好
+- mini-transaction 
+    - atomic
+- 非常适合test-and-set的场景
+- Herd effect羊群效应
+    - 成千个client请求write，只有一个能获得lock，一旦release lock，其他所有的client会再次请求acquire lock。所以最终acquire lock的复杂度是N^2。
+    - 解决方案：给client分配一个ephemeral tickets
+    - 但是该scale lock不保证原子性，中间一个事务执行失败了，需要重新处理，所以使用场景？
+        - mapreduce中一个job只分配一个worker，失败了重新执行就可以
+        - 用来选leader
