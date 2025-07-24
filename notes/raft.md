@@ -1,3 +1,5 @@
+`go test  -run 2D 6.824/raft -v -timeout 24h >log.txt -count=500`
+
 # 核心问题
 ## How to avoid split votes and ensure only 1 leader is elected?
 - randomized re-election
@@ -9,6 +11,11 @@
 确保candidate的log至少和多数人的log一样新=> 如何定义two logs哪个更up to date?
 - term更大
 - log 更长
+
+## **如何处理old RPC request/response, 保证处理结果是幂等的?**
+- 直接reject old RPC
+    - sendRequestAppendEntries response: 根据 nextIndex reject
+    - RequestInstallSnapshot request: 如果是leader了，直接reject
 
 # leader election
 ## 初始都是follower
@@ -86,3 +93,21 @@ election resetrction只针对于election，不需要针对requestEntries
     - 需要注意网络超时时，不能直接在sendAppendEntries中retry，因为此时可能已经不是leader了
     - Start刚发给leader，由于网络超时，其他节点开始重新选举，新leader选举出来后，由于Start的日志不再发了，导致日志check通过不了，不过lab3有retry这个问题不严重
     - Start刚发给leader，其他节点也接收到该新log，但是旧leader还没收到reply的回复，网络超时选出新leader，由于raft要求leader只能commit自己term的日志，所以尽管新leader有改新leader，但是由于没有Start发送新log，导致永远commit不了，不过lab3有retry这个问题不严重。实际上，最好设置一个no-op的空日志，leader一上来就commit才行，不过commit index会和lab2冲突，这里不能这么做
+
+- 代码测试500次通过
+
+
+## 2D
+sendAppendEntries:
+1. nextIndex <= rf.lastIncudedIndex
+    => InstallSnapShot
+2. else: appendEntries
+
+比较困难的地方在于，理解CondSnapshot和SnapShot()何时被调用以及参数的含义：
+- 这两个函数都是在函数运行过程中，接收到想用的ApplyMsg channel之后，会被cfg自动调用，所以不能设置lock，否则直接死锁
+- Snapshot中传入的index是cmd index，而实际记录的是logIndex需要进行转换
+- CondInstallSnapshot时需要确保如下两个事情之一:
+    - 确认自己是follower
+    - 不检查自己是不是follower，但不要trim所有的log，因为有可能收到old RequestInstallSnapShot的RPC，此时自己已经是leader了，如果直接把log置nil，会导致len(rf.Log) < nextIndex[server]
+
+还有就是需要特殊处理下appendEntries时，previousLogIndex==rf.lastIncudedIndex，这种情况不需要处理，此时previousLog一定不会conflict，因为该snapshot一定是由marjority确认后，leader才会commit，进而传给follower做snapshot

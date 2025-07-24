@@ -1044,6 +1044,7 @@ func snapcommon(t *testing.T, name string, disconnect bool, reliable bool, crash
 	cfg.one(rand.Int(), servers, true)
 	leader1 := cfg.checkOneLeader()
 
+	DPrintf("Intial agreement done--------------------------------")
 	for i := 0; i < iters; i++ {
 		victim := (leader1 + 1) % servers
 		sender := leader1
@@ -1053,12 +1054,16 @@ func snapcommon(t *testing.T, name string, disconnect bool, reliable bool, crash
 		}
 
 		if disconnect {
+			DPrintf("Disconnect server:%v--------------------------------", victim)
 			cfg.disconnect(victim)
 			cfg.one(rand.Int(), servers-1, true)
+			DPrintf("Agreement 2.1--------------------------------")
 		}
 		if crash {
+			DPrintf("Crash server:%v--------------------------------", victim)
 			cfg.crash1(victim)
 			cfg.one(rand.Int(), servers-1, true)
+			DPrintf("Agreement 2.2:%v--------------------------------", victim)
 		}
 		// send enough to get a snapshot
 		for i := 0; i < SnapShotInterval+1; i++ {
@@ -1073,16 +1078,21 @@ func snapcommon(t *testing.T, name string, disconnect bool, reliable bool, crash
 		if disconnect {
 			// reconnect a follower, who maybe behind and
 			// needs to rceive a snapshot to catch up.
+			DPrintf("Reconnected server:%v--------------------------------", victim)
 			cfg.connect(victim)
 			cfg.one(rand.Int(), servers, true)
+			DPrintf("Agreement 3.1--------------------------------")
 			leader1 = cfg.checkOneLeader()
 		}
 		if crash {
+			DPrintf("Recover server:%v--------------------------------", victim)
 			cfg.start1(victim, cfg.applierSnap)
 			cfg.connect(victim)
 			cfg.one(rand.Int(), servers, true)
+			DPrintf("Agreement 3.2--------------------------------")
 			leader1 = cfg.checkOneLeader()
 		}
+		DPrintf("Iter done:%v--------------------------------", i)
 	}
 	cfg.end()
 }

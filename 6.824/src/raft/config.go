@@ -182,6 +182,7 @@ func (cfg *config) applier(i int, applyCh chan ApplyMsg) {
 const SnapShotInterval = 10
 
 // periodically snapshot raft state
+// i: server index
 func (cfg *config) applierSnap(i int, applyCh chan ApplyMsg) {
 	lastApplied := 0
 	for m := range applyCh {

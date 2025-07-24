@@ -29,3 +29,6 @@ go.work.sum
 6.8.24/api.key
 6.8.24/.api.key.trimmed
 6.8.24/*-handin.tar.gz
+
+# logs
+*.txt
